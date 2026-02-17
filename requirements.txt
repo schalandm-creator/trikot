@@ -1,0 +1,8 @@
+streamlit>=1.38.0,<1.43.0
+pillow>=10.0,<11.0
+
+# Die stabilsten Versionen für Streamlit Cloud im Jahr 2026
+tensorflow-cpu==2.15.0
+# Alternativen (falls 2.15 nicht geht – nacheinander testen):
+# tensorflow-cpu==2.16.1
+# tensorflow-cpu==2.17.0   ← nur wenn Python 3.11–3.12
