@@ -1,0 +1,17 @@
+# =====================================
+# Minimal – sollte auf fast jedem System laufen
+# =====================================
+
+streamlit>=1.38.0
+pillow>=10.0                # PIL Fork – für Bildverarbeitung
+
+# Wähle **eine** der folgenden TensorFlow-Varianten:
+
+# Variante A – empfohlen für die meisten lokalen Rechner & Streamlit Cloud
+tensorflow-cpu>=2.15.0,<2.17.0
+
+# Variante B – wenn du eine GPU hast und nutzen willst (deutlich größer!)
+# tensorflow>=2.15.0,<2.17.0
+
+# Variante C – wenn du Keras separat installieren musst (selten nötig)
+# keras>=3.0.0
