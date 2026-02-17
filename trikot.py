@@ -24,7 +24,7 @@ except ImportError:
 @st.cache_resource
 def lade_modell():
     try:
-        modell = tf.keras.models.load_model("keras_Model.h5", compile=False)
+        modell = tf.keras.models.load_model("keras_model.h5", compile=False)
 
         with open("labels.txt", "r", encoding="utf-8") as f:
             labels = [zeile.strip() for zeile in f if zeile.strip()]
