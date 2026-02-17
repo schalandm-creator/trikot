@@ -1,5 +1,3 @@
-# requirements.txt für Python 3.13 (nur TF 2.20+ hat Wheels)
 streamlit>=1.38.0,<1.55.0
 pillow>=10.0,<11.0
-tensorflow-cpu>=2.20.0
-numpy
+tensorflow-cpu==2.15.0
