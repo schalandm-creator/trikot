@@ -1,8 +1,10 @@
-streamlit>=1.38.0,<1.43.0
+# requirements.txt – kompatibel mit Python 3.11 & 3.12 (Streamlit Cloud 2026)
+
+streamlit>=1.38.0,<1.55.0
 pillow>=10.0,<11.0
 
-# Die stabilsten Versionen für Streamlit Cloud im Jahr 2026
+# Stabil & kompatibel mit Teachable Machine .h5 Dateien
 tensorflow-cpu==2.15.0
-# Alternativen (falls 2.15 nicht geht – nacheinander testen):
+# Alternativen zum Testen (falls 2.15 nicht lädt):
+# tensorflow-cpu==2.12.0
 # tensorflow-cpu==2.16.1
-# tensorflow-cpu==2.17.0   ← nur wenn Python 3.11–3.12
