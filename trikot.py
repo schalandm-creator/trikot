@@ -31,7 +31,7 @@ except ImportError as e:
 def lade_modell_und_labels():
     try:
         # Model laden (compile=False wie in deinem Original)
-        modell = tf.keras.models.load_model("keras_Model.h5", compile=False)
+        modell = tf.keras.models.load_model("keras_model.h5", compile=False)
 
         # Labels laden & bereinigen (entfernt \n und leere Zeilen)
         with open("labels.txt", "r", encoding="utf-8") as f:
