@@ -1,89 +1,102 @@
-# trikot.py   ← oder wie immer deine Datei heißt
+# app.py   ← speichere genau so (oder trikot.py, aber passe dann den Dateinamen im Cloud-Dashboard an)
 
 import streamlit as st
 from PIL import Image, ImageOps
 import numpy as np
 
 # ────────────────────────────────────────────────
-# 1. TensorFlow laden – mit klarer Fehlermeldung
+# TensorFlow / Keras laden – mit sehr klarer Fehlermeldung für Cloud
 # ────────────────────────────────────────────────
 try:
     import tensorflow as tf
     from tensorflow import keras
-    st.caption(f"TensorFlow {tf.__version__}")
-except ImportError:
-    st.error("TensorFlow fehlt.\n\n**Streamlit Cloud Lösung:**\n"
-             "1. Settings → Advanced settings\n"
-             "2. Python-Version auf **3.11** oder **3.12** stellen\n"
-             "3. requirements.txt muss tensorflow-cpu==2.15.0 enthalten")
+    st.caption(f"TensorFlow geladen: Version {tf.__version__}")
+except ImportError as e:
+    st.error(
+        "TensorFlow konnte **nicht** importiert werden.\n\n"
+        "**Lösung für Streamlit Cloud (wichtig!):**\n"
+        "1. Gehe zu deiner App → Settings (Zahnrad oben rechts)\n"
+        "2. Scrolle zu **Advanced settings**\n"
+        "3. Stelle **Python version** auf **3.11** oder **3.12** (nicht 3.13!)\n"
+        "4. Speichern → App rebooten oder neu pushen\n\n"
+        "requirements.txt muss enthalten: tensorflow-cpu==2.15.0\n\n"
+        f"Fehler: {e}"
+    )
     st.stop()
 
 # ────────────────────────────────────────────────
-# 2. Modell + Labels laden (einmalig)
+# Modell + Labels laden (nur einmal – dank Cache)
 # ────────────────────────────────────────────────
-@st.cache_resource
-def lade_modell():
+@st.cache_resource(show_spinner="Modell laden ... (kann 10–60 Sekunden dauern)")
+def lade_modell_und_labels():
     try:
-        modell = tf.keras.models.load_model("keras_model.h5", compile=False)
+        # Model laden (compile=False wie in deinem Original)
+        modell = tf.keras.models.load_model("keras_Model.h5", compile=False)
 
+        # Labels laden & bereinigen (entfernt \n und leere Zeilen)
         with open("labels.txt", "r", encoding="utf-8") as f:
-            labels = [zeile.strip() for zeile in f if zeile.strip()]
+            klassen = [zeile.strip() for zeile in f if zeile.strip()]
 
-        if not labels:
-            raise ValueError("labels.txt ist leer")
+        if not klassen:
+            raise ValueError("labels.txt ist leer oder fehlerhaft")
 
-        return modell, labels
+        st.success(f"{len(klassen)} Klassen geladen")
+        return modell, klassen
 
     except Exception as e:
-        st.error(f"Modell / Labels konnten nicht geladen werden:\n{e}\n\n"
-                 "• Dateien keras_Model.h5 + labels.txt im Root?\n"
-                 "• Python-Version 3.11 oder 3.12?\n"
-                 "• tensorflow-cpu==2.15.0 in requirements.txt?")
+        st.error(
+            f"Modell oder labels.txt konnten **nicht** geladen werden:\n{e}\n\n"
+            "• Liegen keras_Model.h5 + labels.txt wirklich im Root-Ordner des Repos?\n"
+            "• Python-Version in Cloud auf 3.11/3.12?\n"
+            "• tensorflow-cpu==2.15.0 (oder 2.12.0 / 2.16.1) in requirements.txt?\n"
+            "• Modell mit neuerer TF-Version gespeichert? → Neu exportieren!"
+        )
         st.stop()
 
-modell, klassen = lade_modell()
+modell, klassen = lade_modell_und_labels()
 
 # ────────────────────────────────────────────────
-# 3. Streamlit App
+# Streamlit Oberfläche
 # ────────────────────────────────────────────────
-st.title("📷 Teachable Machine Klassifikator")
-st.markdown("Bild hochladen → Modell sagt, was es sieht.")
+st.title("📸 Teachable Machine – Bildklassifikation")
+st.markdown("Lade ein Bild hoch – das Modell sagt dir die Klasse und Sicherheit.")
 
-bild_datei = st.file_uploader("Bild (jpg, jpeg, png)", type=["jpg", "jpeg", "png"])
+bild = st.file_uploader("Bild hochladen (jpg, jpeg, png)", type=["jpg", "jpeg", "png"])
 
-if bild_datei is not None:
-    # Bild anzeigen
-    bild = Image.open(bild_datei).convert("RGB")
-    st.image(bild, caption="Hochgeladenes Bild", use_column_width=True)
+if bild is not None:
+    # Bild laden & anzeigen
+    img = Image.open(bild).convert("RGB")
+    st.image(img, caption="Dein hochgeladenes Bild", use_column_width=True)
 
-    # Preprocessing (Teachable Machine Standard: 224×224, -1 bis +1)
+    # Preprocessing – genau wie in deinem Originalcode
     groesse = (224, 224)
-    bild = ImageOps.fit(bild, groesse, Image.Resampling.LANCZOS)
+    img = ImageOps.fit(img, groesse, Image.Resampling.LANCZOS)
 
-    bild_array = np.asarray(bild)
-    normalisiert = (bild_array.astype(np.float32) / 127.5) - 1
-    eingabe = np.expand_dims(normalisiert, axis=0)         # (1, 224, 224, 3)
+    img_array = np.asarray(img)
+    normalisiert = (img_array.astype(np.float32) / 127.5) - 1
+
+    data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
+    data[0] = normalisiert
 
     # Vorhersage
-    with st.spinner("Analysiere ..."):
-        vorhersage = modell.predict(eingabe)
+    with st.spinner("Berechne Vorhersage ..."):
+        vorhersage = modell.predict(data)
         index = np.argmax(vorhersage[0])
         klasse = klassen[index]
-        sicherheit = vorhersage[0][index]
+        konfidenz = vorhersage[0][index]
 
-    # Ergebnis
-    st.success("Ergebnis")
-    st.markdown(f"**Klasse:** {klasse}")
-    st.markdown(f"**Sicherheit:** {sicherheit:.1%}")
+    # Ergebnis anzeigen
+    st.success("Vorhersage abgeschlossen!")
+    st.markdown(f"**Klasse:** {klasse.strip()}")
+    st.markdown(f"**Konfidenz:** {konfidenz:.2%} ({konfidenz:.4f})")
+    st.progress(float(konfidenz))
 
-    st.progress(float(sicherheit))
-
-    if st.checkbox("Alle Wahrscheinlichkeiten anzeigen"):
-        for i, w in enumerate(vorhersage[0]):
-            st.write(f"{klassen[i]:<30} {w:.1%}")
+    if st.checkbox("Alle Klassen mit Wahrscheinlichkeiten zeigen"):
+        for i, wert in enumerate(vorhersage[0]):
+            st.write(f"{klassen[i].strip():<35} {wert:.2%}")
 
 else:
-    st.info("Bitte ein Bild hochladen ↑")
+    st.info("Lade bitte ein Bild hoch ↑")
 
 st.markdown("---")
-st.caption("Dateien: keras_Model.h5 + labels.txt müssen im gleichen Ordner wie diese .py-Datei liegen")
+st.caption("Dein Originalcode wurde angepasst für Streamlit: Upload statt fester Pfad, Fehlerbehandlung, Caching.")
